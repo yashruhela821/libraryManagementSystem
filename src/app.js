@@ -1,16 +1,18 @@
 const express = require("express");
-const connectDB = require("./config/database");
-const app = express();
-const User = require("../models/admin");
+const connectDB = require("./config/databases");
+const { validateSignUpData } = require("./utils/validation");
+const User = require("./models/admin");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
+const bcrypt = require("bcrypt");
+const app = express();
 
-app.use(
-  cors({
-    origin: "http://localhost:5173",
-    credentials: true,
-  })
-);
+// app.use(
+//   cors({
+//     origin: "http://localhost:5173",
+//     credentials: true,
+//   })
+// );
 app.use(express.json());
 app.use(cookieParser());
 
@@ -24,6 +26,12 @@ app.post("/signup", async (req, res) => {
       validateSignUpData(req);
   
       const { firstName, lastName, emailId, password } = req.body;
+      //checking email is not presnt already
+      const existingUser = await User.findOne({ emailId });
+      
+      if (existingUser) {
+        return res.status(400).json({ message: "Email already exists." });
+      }
   
       // Encrypt the password
       const passwordHash = await bcrypt.hash(password, 10);
